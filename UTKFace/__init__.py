@@ -13,7 +13,6 @@ class UTKFace(Dataset):
     def __init__(self, root, train=False, eval=False, test=False, transform=None):
         self.root = root
         self.data_loc = f"{root.split('/')[0]}/{'train/' if train else 'eval/' if eval else 'test/' if test else ''}"
-        print(f'{self.data_loc}data.csv')
         self.data = pandas.read_csv(f'{self.data_loc}data.csv')
         self.transform = transform
 
