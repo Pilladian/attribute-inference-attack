@@ -52,9 +52,11 @@ class Target:
         self.train = train
 
         if self.train:
+            print(f' [+] Train CNN on {self.device}')
             self._train_model(ds_root=ds_root)
 
     def _train_model(self, ds_root):
+        print(f' [+] Load dataset')
         self._load_dataset(ds_root)
 
         self.lfn = nn.CrossEntropyLoss()
@@ -62,6 +64,7 @@ class Target:
 
         eps = 1
         max_acc = 0
+        print(f' [+] Run epochs')
         for epoch in range(eps):
             self.model.train()
             for imgs, labels in self.train_loader:
