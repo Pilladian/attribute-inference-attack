@@ -108,7 +108,7 @@ class Target:
 
     def load_model(self, path="Target"):
         self.model = CNN().to(self.device)
-        self.model.load_state_dict(torch.load(f'{path.split('/')[0]}/model.pt'))
+        self.model.load_state_dict(torch.load(f"{path.split('/')[0]}/model.pt"))
 
     def evaluate_model(self, model, data):
         num_correct = 0
