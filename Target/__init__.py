@@ -52,7 +52,6 @@ class Target:
         self.train = train
 
         if self.train:
-            print(f' [+] Train CNN on {self.device}')
             self._train_model(ds_root=ds_root)
 
     def _train_model(self, ds_root):
@@ -61,10 +60,12 @@ class Target:
 
         self.lfn = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.00001)
+        val_acc = self.evaluate_model(self.model, self.validation_loader)
+        print(f' [+] Accuracy of untrained model: {val_acc}')
 
-        eps = 1
+        eps = 3
         max_acc = 0
-        print(f' [+] Run epochs')
+        print(f' [+] Train CNN on {self.device}')
         for epoch in range(eps):
             self.model.train()
             for imgs, labels in self.train_loader:
@@ -77,7 +78,7 @@ class Target:
                 self.optimizer.step()
 
             val_acc = self.evaluate_model(self.model, self.validation_loader)
-            print(f' Epoch {epoch}/{eps} : {val_acc}')
+            print(f' Epoch {epoch + 1}/{eps} : {val_acc}')
             if val_acc > max_acc:
                 max_acc = val_acc
                 self.save_model()
@@ -103,11 +104,11 @@ class Target:
                                             num_workers=1)
 
     def save_model(self):
-        torch.save(self.model.state_dict(), f'model.pt')
+        torch.save(self.model.state_dict(), f'Target/model.pt')
 
-    def load_model(self, path="./"):
+    def load_model(self, path="Target"):
         self.model = CNN().to(self.device)
-        self.model.load_state_dict(torch.load(f'model.pt'))
+        self.model.load_state_dict(torch.load(f'{path.split('/')[0]}/model.pt'))
 
     def evaluate_model(self, model, data):
         num_correct = 0
