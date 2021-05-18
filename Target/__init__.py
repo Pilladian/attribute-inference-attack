@@ -54,6 +54,8 @@ class Target:
         if self.train:
             self._train_model(ds_root=ds_root)
 
+        self._load_model()
+
     def _train_model(self, ds_root):
         print(f' [+] Load dataset')
         self._load_dataset(ds_root)
@@ -81,7 +83,7 @@ class Target:
             print(f' Epoch {epoch + 1}/{eps} : {val_acc}')
             if val_acc > max_acc:
                 max_acc = val_acc
-                self.save_model()
+                self._save_model()
 
     def _load_dataset(self, dir):
         self.transform = transforms.Compose(
@@ -103,12 +105,11 @@ class Target:
                                             batch_size=32,
                                             num_workers=1)
 
-    def save_model(self):
+    def _save_model(self):
         torch.save(self.model.state_dict(), f'Target/model.pt')
 
-    def load_model(self, path="Target"):
-        self.model = CNN().to(self.device)
-        self.model.load_state_dict(torch.load(f"{path.split('/')[0]}/model.pt"))
+    def _load_model(self):
+        self.model.load_state_dict(torch.load("Target/model.pt", map_location=self.device))
 
     def evaluate_model(self, model, data):
         num_correct = 0
