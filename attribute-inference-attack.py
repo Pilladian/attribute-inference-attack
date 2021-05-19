@@ -50,15 +50,16 @@ class AttributeInferenceAttack:
                 logits = target.model(x)
 
                 for i, logit in enumerate(logits):
+                    print(F.log_softmax(logit, dim=1))
                     self.features[(l * self.batch_size) + i] = logit
                     label = torch.ones(1, 1)
                     label[0][0] = int(y[i])
                     self.labels[(l * self.batch_size) + i] = label
 
         # train, eval, test
-        train_mask = torch.zeros(size, dtype=torch.bool)
-        val_mask = torch.zeros(size, dtype=torch.bool)
-        test_mask = torch.zeros(size, dtype=torch.bool)
+        train_mask = torch.zeros(size, dtype=torch.bool).to(self.device)
+        val_mask = torch.zeros(size, dtype=torch.bool).to(self.device)
+        test_mask = torch.zeros(size, dtype=torch.bool).to(self.device)
 
         train_val_split = int(size * train_val)
         val_test_split  = train_val_split + int(size * test_val)
@@ -112,9 +113,9 @@ class AttributeInferenceAttack:
 
         # create attacker model
         print(f' [+] Create Attack Model (MLP)')
-        self.model = Attacker.MLP(2,         # feature amount
+        self.model = Attacker.MLP(5,         # feature amount (White, Black, Asian, Indian, Others)
                                   16,        # hidden nodes
-                                  2,         # num classes (White, Black, Asian, Indian, Others)
+                                  2,         # num classes
                                   2,         # hidden layer
                                   F.relu,    # activation function
                                   0.5)       # dropout
