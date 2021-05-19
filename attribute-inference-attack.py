@@ -29,11 +29,14 @@ test_loader = DataLoader(dataset=test_set,
                          num_workers=1)
 
 
-target = Target.Target(device='cuda:2', train=True, ds_root='UTKFace')
+#target = Target.Target(device='cuda:2', train=True, ds_root='UTKFace')
+target = Target.Target(device='cuda:2')
 #print(f'Test Acc: {target.evaluate_model(target.model, test_loader)}')
 image = Image.open('UTKFace/test/1_0_0_20161219154556757.jpg').convert("RGB")
 image = transform(image)
+image.to('cuda:2')
 
+target.model.eval()
 logits = target.model(image)
 _, preds = torch.max(logits, dim=1)
 print(preds)
