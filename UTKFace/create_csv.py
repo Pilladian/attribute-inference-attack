@@ -6,13 +6,13 @@ import os
 
 
 def create_csv(root):
-    data = pandas.DataFrame(columns=["img_file", "age"])
-    data["img_file"] = os.listdir(root)
-
     try:
         os.system(f'rm {root}/data.csv')
     except:
         pass
+
+    data = pandas.DataFrame(columns=["img_file", "age"])
+    data["img_file"] = os.listdir(root)
 
     for idx, i in enumerate(os.listdir(root)):
         l = i.split('_')
