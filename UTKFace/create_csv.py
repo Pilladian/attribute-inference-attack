@@ -16,8 +16,6 @@ def create_csv(root):
 
     for idx, i in enumerate(os.listdir(root)):
         l = i.split('_')
-        if int(l[0]) < 10:
-            continue
         # female
         if l[1] == '1':
             data["gender"][idx] = 1
