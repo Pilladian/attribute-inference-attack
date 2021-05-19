@@ -72,13 +72,13 @@ class Target:
 
     def __init__(self, device="cpu", train=False, ds_root=None):
         self.device = device
-        self.model = TransCNN(1024, 2).to(self.device)#CNN().to(self.device)
+        self.model = TransCNN(1024, 2).to(self.device)
         self.train = train
 
         if self.train:
             self._train_model(ds_root=ds_root)
 
-        #self._load_model()
+        self._load_model()
 
     def _train_model(self, ds_root):
         print(f' [+] Load dataset')
@@ -110,12 +110,6 @@ class Target:
                 self._save_model()
 
     def _load_dataset(self, dir):
-        # self.transform = transforms.Compose(
-        #     [ transforms.Resize((356, 356)),
-        #       transforms.RandomCrop((299, 299)),
-        #       transforms.ToTensor(),
-        #       transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        #     ])
         self.transform = transforms.Compose(
                             [ transforms.Resize(size=256),
                               transforms.CenterCrop(size=224),
