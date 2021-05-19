@@ -46,8 +46,8 @@ class CNN(nn.Module):
 
 # Transfer Learning Target CNN Model
 def TransCNN(hidden_nodes, num_classes):
-    #transCNN = models.vgg19(pretrained=True)
-    transCNN = models.resnet50(pretrained=True)
+    transCNN = models.vgg19(pretrained=True)
+    #transCNN = models.resnet50(pretrained=True)
 
     # save weights of transCNN
     for param in transCNN.parameters():
