@@ -124,7 +124,7 @@ class Target:
 
                 logits = model(x)
                 _, preds = torch.max(logits, dim=1)
-                num_correct += (preds == y).sum()
+                num_correct += (preds == y).sum() + (preds + 1 == y).sum() + (preds - 1 == y).sum()
                 num_samples += preds.size(0)
 
         return float(num_correct) / float(num_samples)
