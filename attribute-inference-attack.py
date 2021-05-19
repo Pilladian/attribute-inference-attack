@@ -18,7 +18,7 @@ class AttributeInferenceAttack:
 
     def __init__(self, target, device, ds_root, epochs, batch_size):
         self.target = target
-        self.device = device
+        self.device = device.to(device)
         self.ds_root = ds_root
         self.epochs = epochs
         self.batch_size = batch_size
@@ -128,9 +128,13 @@ class AttributeInferenceAttack:
 
 
 # load target model
-target = Target.Target(device='cuda:2', train=True, ds_root='UTKFace')
-
+_TRAIN = False
+_DEVICE = 'cuda:3'
+if _TRAIN:
+    target = Target.Target(device=_DEVICE, train=True, ds_root='UTKFace')
+else:
+    target = Target.Target(device=_DEVICE)
 # run attack
-attack = AttributeInferenceAttack(target.model, device='cpu', ds_root='AttackerDataset', epochs=200, batch_size=64)
+attack = AttributeInferenceAttack(target.model, device=_DEVICE, ds_root='AttackerDataset', epochs=200, batch_size=64)
 acc = attack.run()
 print(f'Attribute Inference Attack: {acc}')
