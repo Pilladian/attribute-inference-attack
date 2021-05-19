@@ -44,17 +44,40 @@ class CNN(nn.Module):
         return output
 
 
+# Transfer Learning Target CNN Model
+def TransCNN(hidden_nodes, num_classes):
+    transCNN = models.vgg19(pretrained=True)
+
+    # save weights of transCNN
+    for param in transCNN.parameters():
+        param.requires_grad = False
+
+    # classifier of CNN
+    model = transCNN
+    model.classifier = nn.Sequential(
+                            nn.Linear(25088, 4096),
+                            nn.ReLU(inplace=True),
+                            nn.Dropout(0.5),
+                            nn.Linear(4096, hidden_nodes),
+                            nn.ReLU(inplace=True),
+                            nn.Dropout(0.4),
+                            nn.Linear(hidden_nodes, num_classes),
+                            nn.LogSoftmax(dim=1)
+                            )
+    return model
+
+
 class Target:
 
     def __init__(self, device="cpu", train=False, ds_root=None):
         self.device = device
-        self.model = CNN().to(self.device)
+        self.model = TransCNN(1024, 116)#CNN().to(self.device)
         self.train = train
 
         if self.train:
             self._train_model(ds_root=ds_root)
 
-        self._load_model()
+        #self._load_model()
 
     def _train_model(self, ds_root):
         print(f' [+] Load dataset')
@@ -65,7 +88,7 @@ class Target:
         val_acc = self.evaluate_model(self.model, self.validation_loader)
         print(f' [+] Accuracy of untrained model: {val_acc}')
 
-        eps = 50
+        eps = 10
         max_acc = 0
         print(f' [+] Train CNN on {self.device}')
         for epoch in range(eps):
@@ -86,12 +109,18 @@ class Target:
                 self._save_model()
 
     def _load_dataset(self, dir):
+        # self.transform = transforms.Compose(
+        #     [ transforms.Resize((356, 356)),
+        #       transforms.RandomCrop((299, 299)),
+        #       transforms.ToTensor(),
+        #       transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        #     ])
         self.transform = transforms.Compose(
-            [ transforms.Resize((356, 356)),
-              transforms.RandomCrop((299, 299)),
-              transforms.ToTensor(),
-              transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-            ])
+                            [ transforms.Resize(size=256),
+                              transforms.CenterCrop(size=224),
+                              transforms.ToTensor(),
+                              transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                            ])
 
         train_set = UTKFace.UTKFace('UTKFace', train=True, transform=self.transform)
         self.train_loader = DataLoader(dataset=train_set,
