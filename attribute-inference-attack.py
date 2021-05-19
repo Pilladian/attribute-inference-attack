@@ -6,6 +6,7 @@ import Target
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from PIL import Image
+import torch
 
 
 # transform = transforms.Compose(
@@ -25,18 +26,17 @@ transform = transforms.Compose(
 test_set = UTKFace.UTKFace(root='UTKFace', test=True, transform=transform)
 test_loader = DataLoader(dataset=test_set,
                          shuffle=True,
-                         batch_size=32,
+                         batch_size=64,
                          num_workers=1)
 
+target = Target.Target(device='cuda:2', train=True, ds_root='UTKFace')
+# target = Target.Target(device='cuda:2')
+print(f'Test Acc: {target.evaluate_model(target.model, test_loader)}')
 
-#target = Target.Target(device='cuda:2', train=True, ds_root='UTKFace')
-target = Target.Target(device='cuda:2')
-#print(f'Test Acc: {target.evaluate_model(target.model, test_loader)}')
-image = Image.open('UTKFace/test/1_0_0_20161219154556757.jpg').convert("RGB")
-image = transform(image)
-image.to('cuda:2')
-
-target.model.eval()
-logits = target.model(image)
-_, preds = torch.max(logits, dim=1)
-print(preds)
+# my_test = DataLoader(dataset=test_set[0])
+# for img, label in test_loader:
+#     print(label)
+#     logits = target.model(img)
+#     _, preds = torch.max(logits, dim=1)
+#     print(preds)
+#     exit()
