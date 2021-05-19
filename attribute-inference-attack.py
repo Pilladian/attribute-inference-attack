@@ -7,6 +7,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from PIL import Image
 import torch
+import matplotlib.pyplot as plt
 
 
 # transform = transforms.Compose(
@@ -25,18 +26,22 @@ transform = transforms.Compose(
 
 test_set = UTKFace.UTKFace(root='UTKFace', test=True, transform=transform)
 test_loader = DataLoader(dataset=test_set,
-                         shuffle=True,
                          batch_size=64,
                          num_workers=1)
 
-target = Target.Target(device='cuda:2', train=True, ds_root='UTKFace')
-# target = Target.Target(device='cuda:2')
-print(f'Test Acc: {target.evaluate_model(target.model, test_loader)}')
+#target = Target.Target(device='cuda:2', train=True, ds_root='UTKFace')
+target = Target.Target() # device='cuda:2')
+# print(f'Test Acc: {target.evaluate_model(target.model, test_loader)}')
 
-# my_test = DataLoader(dataset=test_set[0])
-# for img, label in test_loader:
-#     print(label)
-#     logits = target.model(img)
-#     _, preds = torch.max(logits, dim=1)
-#     print(preds)
-#     exit()
+x = [i for i in range(test_set.__len__())]
+results = []
+
+for img, label in test_loader:
+    logits = target.model(img)
+    _, preds = torch.max(logits, dim=1)
+
+    for i, l in enumerate(label):
+        results.append(l == preds[i])
+
+plt.plot(x, results)
+plt.savefig('asdf.png')
