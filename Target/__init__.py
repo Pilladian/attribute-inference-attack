@@ -65,7 +65,7 @@ class Target:
         val_acc = self.evaluate_model(self.model, self.validation_loader)
         print(f' [+] Accuracy of untrained model: {val_acc}')
 
-        eps = 3
+        eps = 5
         max_acc = 0
         print(f' [+] Train CNN on {self.device}')
         for epoch in range(eps):
