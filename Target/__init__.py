@@ -25,8 +25,8 @@ class CNN(nn.Module):
 
         self.dropout = nn.Dropout(0.5)
 
-        self.lin1 = nn.Linear(1382976, 128)
-        self.lin2 = nn.Linear(128, 2)
+        self.lin1 = nn.Linear(1382976, 256)
+        self.lin2 = nn.Linear(256, 116)
 
     def forward(self, x):
         h = self.conv1(x)
