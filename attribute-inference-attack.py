@@ -22,4 +22,4 @@ test_loader = DataLoader(dataset=test_set,
 
 
 target = Target.Target()
-target.evaluate_model(target.model, test_loader)
+print(f'Test Acc: {target.evaluate_model(target.model, test_loader)}')
