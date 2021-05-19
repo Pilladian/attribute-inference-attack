@@ -18,8 +18,8 @@ import argparse
 class AttributeInferenceAttack:
 
     def __init__(self, target, device, ds_root, epochs, batch_size):
-        self.target = target
-        self.device = device.to(device)
+        self.target = target.to(device)
+        self.device = device
         self.ds_root = ds_root
         self.epochs = epochs
         self.batch_size = batch_size
@@ -118,6 +118,7 @@ class AttributeInferenceAttack:
                                   2,         # hidden layer
                                   F.relu,    # activation function
                                   0.5)       # dropout
+        self.model.to(self.device)
         # optimizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.01)
 
