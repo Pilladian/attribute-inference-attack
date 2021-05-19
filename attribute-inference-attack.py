@@ -113,7 +113,7 @@ class AttributeInferenceAttack:
         print(f' [+] Create Attack Model (MLP)')
         self.model = Attacker.MLP(2,         # feature amount
                                   16,        # hidden nodes
-                                  5,         # num classes (White, Black, Asian, Indian, Others)
+                                  2,         # num classes (White, Black, Asian, Indian, Others)
                                   2,         # hidden layer
                                   F.relu,    # activation function
                                   0.5)       # dropout
@@ -128,7 +128,7 @@ class AttributeInferenceAttack:
 
 
 # load target model
-target = Target.Target()
+target = Target.Target(device='cuda:2', train=True, ds_root='UTKFace')
 
 # run attack
 attack = AttributeInferenceAttack(target.model, device='cpu', ds_root='AttackerDataset', epochs=200, batch_size=64)

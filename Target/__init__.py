@@ -72,7 +72,7 @@ class Target:
 
     def __init__(self, device="cpu", train=False, ds_root=None):
         self.device = device
-        self.model = TransCNN(1024, 2).to(self.device)
+        self.model = TransCNN(1024, 5).to(self.device)
         self.train = train
 
         if self.train:
