@@ -140,7 +140,7 @@ class Target:
         num_samples = 0
         model.eval()
 
-        self.model.eval()
+        model.eval()
         with torch.no_grad():
             for x, y in data:
                 x = x.to(device=self.device)
