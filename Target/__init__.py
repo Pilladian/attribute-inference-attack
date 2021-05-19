@@ -84,7 +84,7 @@ class Target:
         print(f' [+] Load dataset')
         self._load_dataset(ds_root)
 
-        self.lfn = nn.CrossEntropyLoss()
+        self.lfn = F.nll_loss() # nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.00001)
         val_acc = self.evaluate_model(self.model, self.validation_loader)
         print(f' [+] Accuracy of untrained model: {val_acc}')
