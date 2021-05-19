@@ -12,6 +12,7 @@ from PIL import Image
 import torch
 import matplotlib.pyplot as plt
 import numpy
+import argparse
 
 
 class AttributeInferenceAttack:
