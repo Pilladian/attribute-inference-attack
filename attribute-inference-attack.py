@@ -128,7 +128,7 @@ class AttributeInferenceAttack:
 
 
 # load target model
-_TRAIN = False
+_TRAIN = True
 _DEVICE = 'cuda:3'
 if _TRAIN:
     target = Target.Target(device=_DEVICE, train=True, ds_root='UTKFace')
