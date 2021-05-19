@@ -41,7 +41,7 @@ class AttributeInferenceAttack:
         size = self.dataset.__len__()
         train_val = 0.7
         test_val = 0.1
-        self.features = torch.zeros((self.dataset.__len__() + 1, 2), dtype=torch.float)
+        self.features = torch.zeros((self.dataset.__len__() + 1, 5), dtype=torch.float)
         self.labels = torch.zeros((self.dataset.__len__() + 1), dtype=torch.long)
         with torch.no_grad():
             for l, (x, y) in enumerate(loader):
