@@ -5,14 +5,22 @@ import UTKFace
 import Target
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+from PIL import Image
 
+
+# transform = transforms.Compose(
+#     [ transforms.Resize((356, 356)),
+#       transforms.RandomCrop((299, 299)),
+#       transforms.ToTensor(),
+#       transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+#     ])
 
 transform = transforms.Compose(
-    [ transforms.Resize((356, 356)),
-      transforms.RandomCrop((299, 299)),
-      transforms.ToTensor(),
-      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    ])
+                    [ transforms.Resize(size=256),
+                      transforms.CenterCrop(size=224),
+                      transforms.ToTensor(),
+                      transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                    ])
 
 test_set = UTKFace.UTKFace(root='UTKFace', test=True, transform=transform)
 test_loader = DataLoader(dataset=test_set,
@@ -22,4 +30,9 @@ test_loader = DataLoader(dataset=test_set,
 
 
 target = Target.Target()
-print(f'Test Acc: {target.evaluate_model(target.model, test_loader)}')
+#print(f'Test Acc: {target.evaluate_model(target.model, test_loader)}')
+image = Image.open('UTKFace/test/1_0_0_20161219154556757.jpg').convert("RGB")
+image = transform(image)
+
+logits = target.model(image)
+_, preds = torch.max(logits, dim=1)

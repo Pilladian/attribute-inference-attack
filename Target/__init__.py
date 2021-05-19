@@ -84,7 +84,7 @@ class Target:
         print(f' [+] Load dataset')
         self._load_dataset(ds_root)
 
-        self.lfn = F.nll_loss() # nn.CrossEntropyLoss()
+        self.lfn = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.00001)
         val_acc = self.evaluate_model(self.model, self.validation_loader)
         print(f' [+] Accuracy of untrained model: {val_acc}')
@@ -154,7 +154,7 @@ class Target:
 
                 logits = model(x)
                 _, preds = torch.max(logits, dim=1)
-                num_correct += (preds == y).sum() + (preds + 1 == y).sum() + (preds - 1 == y).sum()
+                num_correct += (preds == y).sum()
                 num_samples += preds.size(0)
 
         return float(num_correct) / float(num_samples)
