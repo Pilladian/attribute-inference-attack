@@ -127,14 +127,25 @@ class AttributeInferenceAttack:
         return self.evaluate(self.test_nid)
 
 
+# cmd args
+parser = argparse.ArgumentParser(description='Link-Stealing Attack')
+
+parser.add_argument("--train",
+                    action="store_true",
+                    help="Train Target Model")
+
+parser.add_argument("--device",
+                    default="cpu",
+                    help="Device for calculations")
+
+args = parser.parse_args()
+
 # load target model
-_TRAIN = True
-_DEVICE = 'cuda:3'
-if _TRAIN:
-    target = Target.Target(device=_DEVICE, train=True, ds_root='UTKFace')
+if args.train:
+    target = Target.Target(device=args.device, train=True, ds_root='UTKFace')
 else:
-    target = Target.Target(device=_DEVICE)
+    target = Target.Target(device=args.device)
 # run attack
-attack = AttributeInferenceAttack(target.model, device=_DEVICE, ds_root='AttackerDataset', epochs=200, batch_size=64)
+attack = AttributeInferenceAttack(target.model, device=args.device, ds_root='AttackerDataset', epochs=200, batch_size=64)
 acc = attack.run()
 print(f'Attribute Inference Attack: {acc}')
