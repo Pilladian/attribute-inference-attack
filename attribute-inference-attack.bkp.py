@@ -54,14 +54,8 @@ class AttributeInferenceAttack:
                 logits = self.target(x)
 
                 for i, logit in enumerate(logits):
-                    while torch.max(logit) < 1:
-                        logit += 10
                     idx = random.randint(0, 100)
                     d = (list(logit.numpy()), int(y[i]))
-                    print(d)
-                    if random.randint(0, 100) > 80:
-                        exit()
-
                     if idx < 70:
                         self.train_data.append(d)
                     elif idx < 80:
@@ -109,24 +103,40 @@ class AttributeInferenceAttack:
 
     def _train_model(self):
         for epoch in range(self.params['epochs']):
+            self.model.train()
 
-            for inputs, labels in self.test_data:
-                self.model.train(inputs, labels)
+            for inputs, labels in self.train_dl:
+                inputs = inputs.to(self.device)
+                labels = labels.to(self.device)
 
-            acc = self.evaluate(self.eval_data)
+                # forward
+                output = self.model(inputs)
+                loss = self.loss_fn(output, labels)
+
+                # backward + optimization
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+
+            acc = self.evaluate(self.eval_dl)
             print(f'\tEpoch {epoch + 1}/{self.params["epochs"]} : {acc}')
 
     def evaluate(self, data):
         num_correct = 0
         num_samples = 0
 
-        for x, y in data:
+        self.model.eval()
+        with torch.no_grad():
+            for x, y in data:
+                x = x.to(device=self.device)
+                y = y.to(device=self.device)
 
-            logits = [i[0] for i in self.model.query(x)]
-            pred = 1 if logits[0] < logits[1] else 0
+                logits = self.model(x)
+                _, preds = torch.max(logits, dim=1)
+                # _, correct = torch.max(y, dim=1)
 
-            num_correct += 1 if pred == y else 0
-            num_samples += 1
+                num_correct += (preds == y).sum()
+                num_samples += preds.size(0)
 
         return float(num_correct) / float(num_samples)
 
@@ -144,13 +154,20 @@ class AttributeInferenceAttack:
 
         # create attacker model
         print(f' [+] Create Attack Model (MLP)')
-        self.model = Attacker.NeuralNetwork(5, 16, 2, 0.01)
+        self.model = Attacker.MLP(self.params['feat_amount'],       # feature amount (White, Black, Asian, Indian, Others)
+                                  self.params['num_hnodes'],        # hidden nodes
+                                  self.params['num_classes'],       # num classes
+                                  self.params['activation_fn'],     # activation function
+                                  self.params['dropout'])           # dropout
+        self.model.to(self.device)
+        # optimizer
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.params['lr'])
 
         # train attacker model
         print(f' [+] Train Attack Model for {self.params["epochs"]} epochs')
         self._train_model()
 
-        return self.evaluate(self.test_data)
+        return self.evaluate(self.test_dl)
 
 
 # cmd args
@@ -178,7 +195,7 @@ else:
 # run attack
 parames = {'epochs': 50,
           'lr': 0.001,
-          'batch_size': 1,
+          'batch_size': 128,
           'feat_amount': 5,
           'num_hnodes': 16,
           'num_classes': 2,
