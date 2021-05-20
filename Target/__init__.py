@@ -134,6 +134,8 @@ class Target:
 
     def _load_model(self):
         self.model.load_state_dict(torch.load("Target/model.pt", map_location=self.device))
+        #self._load_dataset('afd')
+        #print(self.evaluate_model(self.model, self.validation_loader))
 
     def evaluate_model(self, model, data):
         num_correct = 0
@@ -145,6 +147,8 @@ class Target:
             for x, y in data:
                 x = x.to(device=self.device)
                 y = y.to(device=self.device)
+                print(x)
+                print(y)
 
                 logits = model(x)
                 _, preds = torch.max(logits, dim=1)

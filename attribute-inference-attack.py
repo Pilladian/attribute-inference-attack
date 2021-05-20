@@ -27,6 +27,8 @@ class AttributeInferenceAttack:
         self.device = device
         self.ds_root = ds_root
         self.params = params
+        self.loss_fn = params['loss_fn']
+
 
     def _load_dataset(self):
         transform = transforms.Compose(
@@ -75,20 +77,31 @@ class AttributeInferenceAttack:
 
     def load_data(self):
         with open('Attacker/train_data.txt', 'rb') as trd:
-            self.train_data = pickle.load(trd)
+            self.train_data = self.get_data(pickle.load(trd))
 
         with open('Attacker/eval_data.txt', 'rb') as evd:
-            self.eval_data = pickle.load(evd)
+            self.eval_data = self.get_data(pickle.load(evd))
 
         with open('Attacker/test_data.txt', 'rb') as ted:
-            self.test_data = pickle.load(ted)
+            self.test_data = self.get_data(pickle.load(ted))
 
-        self.train_dl = DataLoader(self.train_data, batch_size=64)
-        self.eval_dl = DataLoader(self.train_data, batch_size=64)
-        self.test_dl = DataLoader(self.train_data, batch_size=64)
+        self.train_dl = DataLoader(self.train_data, batch_size=self.params['batch_size'])
+        self.eval_dl = DataLoader(self.train_data, batch_size=self.params['batch_size'])
+        self.test_dl = DataLoader(self.train_data, batch_size=self.params['batch_size'])
+
+    def get_data(self, list):
+        data = []
+        for input, label in list:
+            input = torch.FloatTensor(input)
+            # l = torch.zeros(2)
+            # if label == 1:
+            #     l[1] = 1
+            # else:
+            #     l[0] = 1
+            data.append([input, label])
+        return data
 
     def _train_model(self):
-        loss_fn = F.cross_entropy
         for epoch in range(self.params['epochs']):
             self.model.train()
 
@@ -96,14 +109,12 @@ class AttributeInferenceAttack:
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
 
-                self.optimizer.zero_grad()
-
                 # forward
                 output = self.model(inputs)
-                output = output.view(-1, 2)
-                loss = loss_fn(output, labels)
+                loss = self.loss_fn(output, labels)
 
                 # backward + optimization
+                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
@@ -114,7 +125,7 @@ class AttributeInferenceAttack:
         num_correct = 0
         num_samples = 0
 
-        model.eval()
+        self.model.eval()
         with torch.no_grad():
             for x, y in data:
                 x = x.to(device=self.device)
@@ -122,6 +133,8 @@ class AttributeInferenceAttack:
 
                 logits = self.model(x)
                 _, preds = torch.max(logits, dim=1)
+                # _, correct = torch.max(y, dim=1)
+
                 num_correct += (preds == y).sum()
                 num_samples += preds.size(0)
 
@@ -180,14 +193,15 @@ if args.train:
 else:
     target = Target.Target(device=args.device)
 # run attack
-parames = {'epochs': 200,
+parames = {'epochs': 50,
           'lr': 0.001,
-          'batch_size': 1,
+          'batch_size': 128,
           'feat_amount': 5,
-          'num_hnodes': 128,
+          'num_hnodes': 16,
           'num_classes': 2,
-          'activation_fn': nn.ReLU(),
-          'dropout': 0.5}
+          'activation_fn': nn.Sigmoid(),
+          'loss_fn': F.cross_entropy,
+          'dropout': 0.1}
 
 attack = AttributeInferenceAttack(target.model,
                                   args.load,
