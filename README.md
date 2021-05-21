@@ -18,6 +18,7 @@ As our target model we used a *Convolutional Neural Network* with the following 
 | Dropout       | 0.5
 | Optimizer     | Adam
 | Loss Function | CrossEntropyLoss
+| Accuracy      | 0.8863
 
 ## Attacker Model
 As our attacker model we used a *Multi Layer Perceptron* with the following hyper-parameter.
