@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import UTKFace
 
 
-# Convolutional Neural Network trained on male / female image
+# Convolutional Neural Network trained to infer gender
 class CNN(nn.Module):
 
     def __init__(self):
@@ -25,10 +25,13 @@ class CNN(nn.Module):
 
         self.dropout = nn.Dropout(0.5)
 
-        self.lin1 = nn.Linear(1382976, 256)
-        self.lin2 = nn.Linear(256, 116)
+        self.lin1 = nn.Linear(1382976, 1024)
+        self.lin2 = nn.Linear(1024, 512)
+        self.lin3 = nn.Linear(512, 256)
+        self.lin4 = nn.Linear(256, 2)
 
     def forward(self, x):
+        # convolution
         h = self.conv1(x)
         h = F.relu(h)
         h = self.conv2(h)
@@ -36,10 +39,21 @@ class CNN(nn.Module):
         h = F.max_pool2d(h, 2)
         h = self.dropout(h)
         h = torch.flatten(h, 1)
+
+        # classifier
+        h = self.lin1(h)
+        h = F.relu(h)
+        h = self.dropout(h)
         h = self.lin1(h)
         h = F.relu(h)
         h = self.dropout(h)
         h = self.lin2(h)
+        h = F.relu(h)
+        h = self.dropout(h)
+        h = self.lin3(h)
+        h = F.relu(h)
+        h = self.dropout(h)
+        h = self.lin4(h)
         output = F.log_softmax(h, dim=1)
         return output
 
@@ -72,7 +86,7 @@ class Target:
 
     def __init__(self, device="cpu", train=False, ds_root=None):
         self.device = device
-        self.model = TransCNN(1024, 5).to(self.device)
+        self.model = CNN().to(self.device)  # TransCNN(1024, 5).to(self.device)
         self.train = train
 
         if self.train:
@@ -120,14 +134,14 @@ class Target:
         train_set = UTKFace.UTKFace('UTKFace', train=True, transform=self.transform)
         self.train_loader = DataLoader(dataset=train_set,
                                        shuffle=True,
-                                       batch_size=32,
-                                       num_workers=1)
+                                       batch_size=64,
+                                       num_workers=8)
 
         validation_set = UTKFace.UTKFace('UTKFace', eval=True, transform=self.transform)
         self.validation_loader = DataLoader(dataset=validation_set,
                                             shuffle=True,
-                                            batch_size=32,
-                                            num_workers=1)
+                                            batch_size=64,
+                                            num_workers=8)
 
     def _save_model(self):
         torch.save(self.model.state_dict(), f'Target/model.pt')
