@@ -23,12 +23,12 @@ class CNN(nn.Module):
         self.conv1 = nn.Conv2d(3, 32, 3)
         self.conv2 = nn.Conv2d(32, 64, 3)
 
-        self.dropout = nn.Dropout(0.5)
-
         self.lin1 = nn.Linear(774400, 1024)
         self.lin2 = nn.Linear(1024, 512)
         self.lin3 = nn.Linear(512, 256)
         self.lin4 = nn.Linear(256, 2)
+
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
         # convolution
@@ -54,29 +54,25 @@ class CNN(nn.Module):
         output = F.log_softmax(h, dim=1)
         return output
 
+    def get_last_hidden_layer(self, x):
+        # convolution
+        h = self.conv1(x)
+        h = F.relu(h)
+        h = self.conv2(h)
+        h = F.relu(h)
+        h = F.max_pool2d(h, 2)
+        h = self.dropout(h)
+        h = torch.flatten(h, 1)
 
-# Transfer Learning Target CNN Model
-def TransCNN(hidden_nodes, num_classes):
-    transCNN = models.vgg19(pretrained=True)
-    #transCNN = models.resnet50(pretrained=True)
-
-    # save weights of transCNN
-    for param in transCNN.parameters():
-        param.requires_grad = False
-
-    # classifier of CNN
-    model = transCNN
-    model.classifier = nn.Sequential(
-                            nn.Linear(25088, 4096),
-                            nn.ReLU(inplace=True),
-                            nn.Dropout(0.5),
-                            nn.Linear(4096, hidden_nodes),
-                            nn.ReLU(inplace=True),
-                            nn.Dropout(0.4),
-                            nn.Linear(hidden_nodes, num_classes),
-                            nn.LogSoftmax(dim=1)
-                            )
-    return model
+        # classifier
+        h = self.lin1(h)
+        h = F.relu(h)
+        h = self.dropout(h)
+        h = self.lin2(h)
+        h = F.relu(h)
+        h = self.dropout(h)
+        output = self.lin3(h)
+        return output
 
 
 class Target:

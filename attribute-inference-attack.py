@@ -51,17 +51,11 @@ class AttributeInferenceAttack:
             for l, (x, y) in enumerate(loader):
                 x = x.to(device=self.device)
                 y = y.to(device=self.device)
-                logits = self.target(x)
+                logits = self.target.get_last_hidden_layer(x)
 
                 for i, logit in enumerate(logits):
-                    while torch.max(logit) < 1:
-                        logit += 10
                     idx = random.randint(0, 100)
                     d = (list(logit.numpy()), int(y[i]))
-                    print(d)
-                    if random.randint(0, 100) > 80:
-                        exit()
-
                     if idx < 70:
                         self.train_data.append(d)
                     elif idx < 80:
@@ -70,25 +64,25 @@ class AttributeInferenceAttack:
                         self.test_data.append(d)
 
     def save_data(self):
-        with open('Attacker/train_data.txt', 'wb') as trd:
+        with open(f'Attacker/train_data-{self.params["feat_amount"]}.txt', 'wb') as trd:
             pickle.dump(self.train_data, trd)
 
-        with open('Attacker/eval_data.txt', 'wb') as evd:
+        with open(f'Attacker/eval_data-{self.params["feat_amount"]}.txt', 'wb') as evd:
             pickle.dump(self.eval_data, evd)
 
-        with open('Attacker/test_data.txt', 'wb') as ted:
+        with open(f'Attacker/test_data-{self.params["feat_amount"]}.txt', 'wb') as ted:
             pickle.dump(self.test_data, ted)
 
         self.load_data()
 
     def load_data(self):
-        with open('Attacker/train_data.txt', 'rb') as trd:
+        with open(f'Attacker/train_data-{self.params["feat_amount"]}.txt', 'rb') as trd:
             self.train_data = self.get_data(pickle.load(trd))
 
-        with open('Attacker/eval_data.txt', 'rb') as evd:
+        with open(f'Attacker/eval_data-{self.params["feat_amount"]}.txt', 'rb') as evd:
             self.eval_data = self.get_data(pickle.load(evd))
 
-        with open('Attacker/test_data.txt', 'rb') as ted:
+        with open(f'Attacker/test_data-{self.params["feat_amount"]}.txt', 'rb') as ted:
             self.test_data = self.get_data(pickle.load(ted))
 
         self.train_dl = DataLoader(self.train_data, batch_size=self.params['batch_size'])
@@ -99,58 +93,80 @@ class AttributeInferenceAttack:
         data = []
         for input, label in list:
             input = torch.FloatTensor(input)
-            # l = torch.zeros(2)
-            # if label == 1:
-            #     l[1] = 1
-            # else:
-            #     l[0] = 1
             data.append([input, label])
         return data
 
     def _train_model(self):
-        for epoch in range(self.params['epochs']):
+        for epoch in range(1, self.params['epochs'] + 1):
+            self.model.train()
 
-            for inputs, labels in self.test_data:
-                self.model.train(inputs, labels)
+            for inputs, labels in self.train_dl:
+                inputs = inputs.to(self.device)
+                labels = labels.to(self.device)
 
-            acc = self.evaluate(self.eval_data)
-            print(f'\tEpoch {epoch + 1}/{self.params["epochs"]} : {acc}')
+                # forward
+                output = self.model(inputs)
+                loss = self.loss_fn(output, labels)
+
+                # backward + optimization
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+
+            if epoch % 100 == 0:
+                acc = self.evaluate(self.eval_dl)
+                print(f'\tEpoch {epoch}/{self.params["epochs"]} : {acc}')
 
     def evaluate(self, data):
         num_correct = 0
         num_samples = 0
 
-        for x, y in data:
+        self.model.eval()
+        with torch.no_grad():
+            for x, y in data:
+                x = x.to(device=self.device)
+                y = y.to(device=self.device)
 
-            logits = [i[0] for i in self.model.query(x)]
-            pred = 1 if logits[0] < logits[1] else 0
+                logits = self.model(x)
+                _, preds = torch.max(logits, dim=1)
 
-            num_correct += 1 if pred == y else 0
-            num_samples += 1
+                num_correct += (preds == y).sum()
+                num_samples += preds.size(0)
 
         return float(num_correct) / float(num_samples)
+
+    def _save_model(self):
+        torch.save(self.model.state_dict(), f'Attacker/attack-{1 if self.params["feat_amount"] == 2 else 2}.pt')
 
     def run(self):
         if self.load:
             # load saved dataset
-            print(f' [+] Load AttackDataset')
+            print(f'\n [+] Process AttackDataset')
             self.load_data()
         else:
             # process raw dataset
-            print(f' [+] Process AttackDataset')
+            print(f'\n [+] Load AttackDataset')
             dataloader = self._load_dataset()
             self._process_raw_data(dataloader)
             self.save_data()
 
         # create attacker model
         print(f' [+] Create Attack Model (MLP)')
-        self.model = Attacker.NeuralNetwork(5, 16, 2, 0.01)
+        self.model = Attacker.MLP(self.params['feat_amount'],       # feature amount
+                                  self.params['num_hnodes'],        # hidden nodes
+                                  self.params['num_classes'],       # num classes
+                                  self.params['activation_fn'],     # activation function
+                                  self.params['dropout'])           # dropout
+        self.model.to(self.device)
+        # optimizer
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.params['lr'])
 
         # train attacker model
-        print(f' [+] Train Attack Model for {self.params["epochs"]} epochs')
+        print(f' [+] Run Attack {1 if self.params["feat_amount"] == 2 else 2}')
         self._train_model()
+        self._save_model()
 
-        return self.evaluate(self.test_data)
+        return self.evaluate(self.test_dl)
 
 
 # cmd args
@@ -175,21 +191,43 @@ if args.train:
     target = Target.Target(device=args.device, train=True, ds_root='UTKFace')
 else:
     target = Target.Target(device=args.device)
-# run attack
-parames = {'epochs': 50,
-          'lr': 0.001,
-          'batch_size': 1,
-          'feat_amount': 5,
-          'num_hnodes': 16,
-          'num_classes': 2,
-          'activation_fn': nn.Sigmoid(),
-          'loss_fn': F.cross_entropy,
-          'dropout': 0.1}
 
-attack = AttributeInferenceAttack(target.model,
+# Attack 1
+parames1 = {'epochs': 1500,
+            'lr': 0.01,
+            'batch_size': 64,
+            'feat_amount': 2,
+            'num_hnodes': 16,
+            'num_classes': 5,
+            'activation_fn': nn.Sigmoid(),
+            'loss_fn': F.cross_entropy,
+            'dropout': 0}
+
+attack1 = AttributeInferenceAttack(target.model,
                                   args.load,
                                   device=args.device,
                                   ds_root='AttackerDataset',
-                                  params=parames)
-acc = attack.run()
-print(f'Attribute Inference Attack: {acc}')
+                                  params=parames1)
+acc1 = attack1.run()
+
+# Attack 2
+parames2 = {'epochs': 1500,
+            'lr': 0.01,
+            'batch_size': 64,
+            'feat_amount': 256,
+            'num_hnodes': 16,
+            'num_classes': 5,
+            'activation_fn': nn.Sigmoid(),
+            'loss_fn': F.cross_entropy,
+            'dropout': 0}
+
+attack2 = AttributeInferenceAttack(target.model,
+                                  args.load,
+                                  device=args.device,
+                                  ds_root='AttackerDataset',
+                                  params=parames2)
+acc2 = attack2.run()
+print(f'\n [  Target  ] Gender Prediction: 0.8863 acc.\n')
+print(f' [ Baseline ] Guessing: 0.20 acc.')
+print(f' [ Attack 1 ] Attribute Inference Attack - Race: {acc1:0.4f} acc.')
+print(f' [ Attack 2 ] Attribute Inference Attack - Race: {acc2:0.4f} acc.\n')

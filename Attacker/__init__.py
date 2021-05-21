@@ -29,7 +29,7 @@ class MLP(nn.Module):
         h = self.dropout(h)
         h = self.lin2(h)
         h = self.activation(h)
-        #h = self.dropout(h)
+        h = self.dropout(h)
         h = self.lin3(h)
         out = self.logso(h)
         return out

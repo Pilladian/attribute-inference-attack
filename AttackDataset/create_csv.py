@@ -11,23 +11,24 @@ def create_csv(root):
     except:
         pass
 
-    data = pandas.DataFrame(columns=["img_file", "gender"])
-    data["img_file"] = os.listdir(root)
+    data = pandas.DataFrame(columns=["img_file", "race"])
+    classes = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
 
-    for idx, i in enumerate(os.listdir(root)):
+    img_files = []
+    races = []
+    idx = 0
+    for _, i in enumerate(os.listdir(root)):
         l = i.split('_')
-        # female
-        if l[1] == '1':
-            data["gender"][idx] = 1
-        # male
-        elif l[1] == '0':
-            data["gender"][idx] = 0
-        # data["age"][idx] = int(l[0])
-        # data["race"][idx] = int(l[2])
+        if classes[int(l[2])] < 342:
+            img_files.append(i)
+            races.append(int(l[2]))
+            classes[int(l[2])] += 1
+            idx += 1
+
+    data["img_file"] = img_files
+    data["race"] = races
 
     data.to_csv(f"{root}data.csv", index=False, header=True)
 
 
-#create_csv('train/')
-#create_csv('eval/')
 create_csv('test/')
