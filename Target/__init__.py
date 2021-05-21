@@ -25,7 +25,7 @@ class CNN(nn.Module):
 
         self.dropout = nn.Dropout(0.5)
 
-        self.lin1 = nn.Linear(1382976, 1024)
+        self.lin1 = nn.Linear(774400, 1024)
         self.lin2 = nn.Linear(1024, 512)
         self.lin3 = nn.Linear(512, 256)
         self.lin4 = nn.Linear(256, 2)
