@@ -117,6 +117,7 @@ class Target:
                 self._save_model()
 
     def _load_dataset(self, dir):
+        print('jo')
         self.transform = transforms.Compose(
                             [ transforms.Resize(size=256),
                               transforms.CenterCrop(size=224),
@@ -127,14 +128,14 @@ class Target:
         train_set = UTKFace.UTKFace('UTKFace', train=True, transform=self.transform)
         self.train_loader = DataLoader(dataset=train_set,
                                        shuffle=True,
-                                       batch_size=64,
-                                       num_workers=8)
+                                       batch_size=1,
+                                       num_workers=1)
 
         validation_set = UTKFace.UTKFace('UTKFace', eval=True, transform=self.transform)
         self.validation_loader = DataLoader(dataset=validation_set,
                                             shuffle=True,
-                                            batch_size=64,
-                                            num_workers=8)
+                                            batch_size=1,
+                                            num_workers=1)
 
     def _save_model(self):
         torch.save(self.model.state_dict(), f'Target/model.pt')
